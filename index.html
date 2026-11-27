@@ -106,6 +106,26 @@ ground.receiveShadow=true;
 scene.add(ground);
 
 // Utilities
+ function label(x,y,z,text,color=0x333333){
+ const canvas=document.createElement('canvas');
+ canvas.width=512;
+ canvas.height=128;
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle='white';
+ ctx.fillRect(0,0,512,128);
+ ctx.fillStyle='#222';
+ ctx.font='bold 42px Arial';
+ ctx.textAlign='center';
+ ctx.fillText(text,256,78);
+ const texture=new THREE.CanvasTexture(canvas);
+ const sprite=new THREE.Sprite(
+   new THREE.SpriteMaterial({map:texture})
+ );
+ sprite.position.set(x,y,z);
+ sprite.scale.set(35,9,1);
+ scene.add(sprite);
+ return sprite;
+}
 function box(w,h,d,color,x,y,z){
  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material(color));
  m.position.set(x,y,z);
