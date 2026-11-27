@@ -203,9 +203,16 @@ camera.lookAt(player.position);
 const keys={};
 window.addEventListener('keydown',e=>{
  keys[e.key.toLowerCase()]=true;
+ if(e.key === 'Shift') keys['shift']=true;
 });
+
 window.addEventListener('keyup',e=>{
  keys[e.key.toLowerCase()]=false;
+ if(e.key === 'Shift') keys['shift']=false;
+});
+
+window.addEventListener('blur',()=>{
+ for(const key in keys) keys[key]=false;
 });
 
 // Collision check
