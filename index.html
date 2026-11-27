@@ -67,8 +67,14 @@ scene.fog=new THREE.Fog(0x9bc7e7,450,1200);
 
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2000);
 
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(innerWidth,innerHeight);
+const renderer=new THREE.WebGLRenderer({
+  antialias:true,
+  powerPreference:"high-performance"
+});
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
