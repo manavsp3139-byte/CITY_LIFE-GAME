@@ -2,71 +2,71 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>City Life - Vadodara</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>City Life: Vadodara</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;overflow:hidden;font-family:Arial;background:#87b6d9}
+body{margin:0;overflow:hidden;background:#87b8df;font-family:Arial}
 #hud{
-position:fixed;left:12px;top:12px;z-index:5;color:white;
-background:rgba(20,25,32,.85);padding:14px;border-radius:12px;
-font-size:14px;line-height:1.7
+ position:fixed;top:12px;left:12px;z-index:5;
+ color:white;background:rgba(20,25,35,.85);
+ padding:14px;border-radius:12px;line-height:1.8;
+ font-size:14px
 }
-#mapbtn{
-position:fixed;right:12px;top:12px;z-index:6;
-padding:12px;border:0;border-radius:10px;background:#222;color:white;
-font-weight:bold;cursor:pointer
+#mapBtn{
+ position:fixed;top:12px;right:12px;z-index:6;
+ padding:13px;border:0;border-radius:10px;
+ background:#202630;color:white;font-weight:bold
 }
 #mapOverlay{
-display:none;position:fixed;inset:0;background:rgba(10,15,20,.95);
-z-index:10;color:white;padding:25px;overflow:auto
+ display:none;position:fixed;inset:0;z-index:10;
+ background:rgba(10,15,20,.94);color:white;text-align:center;
+ padding:15px
 }
-#mapOverlay h2{text-align:center}
-#cityMap{
-display:block;margin:15px auto;width:min(90vw,700px);
-height:min(90vw,700px);background:#738f65;border:3px solid white;
-border-radius:12px
+#mapCanvas{
+ width:min(90vw,700px);height:min(90vw,700px);
+ max-height:80vh;background:#789a68;border:2px solid white;
+ display:block;margin:10px auto
 }
-#closeMap{
-display:block;margin:15px auto;padding:12px 25px;
-border:0;border-radius:8px;font-size:16px
-}
+#closeMap{padding:12px 30px;border:0;border-radius:10px}
 #status{
-position:fixed;bottom:15px;left:50%;transform:translateX(-50%);
-background:rgba(0,0,0,.7);color:white;padding:10px 20px;
-border-radius:10px;z-index:5
+ position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+ background:rgba(0,0,0,.7);color:white;padding:12px 20px;
+ border-radius:12px
 }
 </style>
 </head>
 <body>
 
 <div id="hud">
-<b>🏙️ CITY LIFE: VADODARA</b><br>
+<b>🏙 CITY LIFE: VADODARA</b><br>
 WASD / Arrow keys: Move<br>
 SHIFT: Sprint<br>
-E: Enter / Exit vehicle<br>
-Drag mouse: Camera<br>
+E: Enter / Exit car<br>
+Mouse drag: Camera<br>
 M: Map<br>
 <div id="vehicleStatus">Walking</div>
 </div>
 
-<button id="mapbtn">🗺️ MAP (M)</button>
+<button id="mapBtn">🗺 MAP (M)</button>
 <div id="status">Vadodara</div>
 
 <div id="mapOverlay">
-<h2>VADODARA CITY</h2>
-<canvas id="cityMap" width="700" height="700"></canvas>
-<button id="closeMap">Close Map</button>
+<h2>VADODARA CITY MAP</h2>
+<canvas id="mapCanvas" width="700" height="700"></canvas>
+<button id="closeMap">CLOSE MAP</button>
 </div>
 
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x9bc6e7);
-scene.fog=new THREE.Fog(0x9bc6e7,400,1100);
+scene.background=new THREE.Color(0x9bc7e7);
+scene.fog=new THREE.Fog(0x9bc7e7,450,1200);
 
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,1500);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2000);
+
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -77,964 +77,935 @@ document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffffff,0x60734b,2));
 
-const sun=new THREE.DirectionalLight(0xffffff,2.7);
-sun.position.set(100,200,150);
+const sun=new THREE.DirectionalLight(0xffffff,2.2);
+sun.position.set(180,240,120);
 sun.castShadow=true;
-sun.shadow.mapSize.set(1024,1024);
+sun.shadow.mapSize.set(2048,2048);
 scene.add(sun);
+
+const mats={};
+function material(color,rough=.85){
+ return new THREE.MeshStandardMaterial({color,roughness:rough});
+}
+
+mats.road=material(0x30343a);
+mats.sidewalk=material(0xbab7ac);
+mats.grass=material(0x86a76b);
+mats.white=material(0xffffff);
+mats.window=material(0x75a8c2,.35);
+mats.skin=material(0xb98059);
+mats.black=material(0x222222);
 
 // Ground
 const ground=new THREE.Mesh(
-new THREE.PlaneGeometry(1400,1400),
-new THREE.MeshStandardMaterial({color:0x7d9c64})
+ new THREE.PlaneGeometry(1200,1200),
+ mats.grass
 );
 ground.rotation.x=-Math.PI/2;
 ground.receiveShadow=true;
 scene.add(ground);
 
-const player=new THREE.Group();
-scene.add(player);
-
-// Player body
-const skin=new THREE.MeshStandardMaterial({color:0xb98059});
-const shirt=new THREE.MeshStandardMaterial({color:0x2674d9});
-const pants=new THREE.MeshStandardMaterial({color:0x25374b});
-
-const torso=new THREE.Mesh(new THREE.BoxGeometry(.65,.85,.35),shirt);
-torso.position.y=1.25;
-player.add(torso);
-
-const head=new THREE.Mesh(new THREE.SphereGeometry(.23,16,12),skin);
-head.position.y=1.92;
-player.add(head);
-
-const legs=[];
-for(let i=0;i<2;i++){
-const leg=new THREE.Mesh(new THREE.BoxGeometry(.22,.7,.25),pants);
-leg.position.set(i===0?-.15:.15,.45,0);
-player.add(leg);
-legs.push(leg);
+// Utilities
+function box(w,h,d,color,x,y,z){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material(color));
+ m.position.set(x,y,z);
+ m.castShadow=true;
+ m.receiveShadow=true;
+ scene.add(m);
+ return m;
 }
 
-const arms=[];
-for(let i=0;i<2;i++){
-const arm=new THREE.Mesh(new THREE.BoxGeometry(.18,.65,.2),skin);
-arm.position.set(i===0?-.43:.43,1.25,0);
-player.add(arm);
-arms.push(arm);
+function road(x,z,w,d){
+ box(w,.12,d,0x30343a,x,.05,z);
 }
 
-player.position.set(0,0,0);
+// City roads: planned locations
+const majorX=[-300,-180,-60,60,180,300];
+const majorZ=[-300,-180,-60,60,180,300];
 
-// Materials
-function mat(color,rough=.85){
-return new THREE.MeshStandardMaterial({color,roughness:rough});
+for(const x of majorX)road(x,0,18,700);
+for(const z of majorZ)road(0,z,700,18);
+
+// Smaller streets inside blocks
+for(let x=-240;x<=240;x+=60){
+ if(!majorX.includes(x))road(x,0,9,600);
+}
+for(let z=-240;z<=240;z+=60){
+ if(!majorZ.includes(z))road(0,z,600,9);
 }
 
-const asphalt=mat(0x30343a);
-const sidewalkMat=mat(0xc4c0b5);
-const white=mat(0xffffff);
-
-// Roads
-function makeRoad(x,z,w,d){
-const road=new THREE.Mesh(new THREE.BoxGeometry(w,.08,d),asphalt);
-road.position.set(x,.03,z);
-road.receiveShadow=true;
-scene.add(road);
-
-// Sidewalks only along the edges of each road
-if(w>d){
-for(let s of [-1,1]){
-const walk=new THREE.Mesh(new THREE.BoxGeometry(w,.16,2.5),sidewalkMat);
-walk.position.set(x,.12,z+s*(d/2+1.25));
-scene.add(walk);
-}
-}else{
-for(let s of [-1,1]){
-const walk=new THREE.Mesh(new THREE.BoxGeometry(2.5,.16,d),sidewalkMat);
-walk.position.set(x+s*(w/2+1.25),.12,z);
-scene.add(walk);
-}
-}
+// Road lane markings
+function line(x,z,w,d){
+ box(w,.13,d,0xffffff,x,.12,z);
 }
 
-function dashedLine(x,z,w,d,alongX){
-for(let i=-Math.floor((alongX?w:d)/2)+6;i<(alongX?w:d)/2;i+=12){
-const stripe=new THREE.Mesh(
-new THREE.BoxGeometry(alongX?4:.25,.09,alongX?.25:4),
-white
-);
-stripe.position.set(alongX?x+i:x,.1,alongX?z:z+i);
-scene.add(stripe);
+for(const x of majorX){
+ for(let z=-330;z<=330;z+=30){
+  line(x,z,1,.5);
+ }
 }
-}
-
-// Main grid roads
-makeRoad(0,0,24,700);
-makeRoad(0,0,700,24);
-makeRoad(-200,0,16,700);
-makeRoad(200,0,16,700);
-makeRoad(0,-200,700,16);
-makeRoad(0,200,700,16);
-makeRoad(0,300,700,18);
-makeRoad(0,-300,700,18);
-
-dashedLine(0,0,700,24,true);
-dashedLine(0,0,24,700,false);
-
-// Smaller roads
-for(let x=-300;x<=300;x+=100){
-if(Math.abs(x)<30)continue;
-makeRoad(x,0,12,600);
-}
-for(let z=-300;z<=300;z+=100){
-if(Math.abs(z)<30)continue;
-makeRoad(0,z,600,12);
+for(const z of majorZ){
+ for(let x=-330;x<=330;x+=30){
+  line(x,z,.5,1);
+ }
 }
 
-// Buildings
-function building(x,z,w,d,h,color,name){
-const g=new THREE.Group();
-
-const base=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
-base.position.y=h/2;
-base.castShadow=true;
-base.receiveShadow=true;
-g.add(base);
-
-// Windows on the front
-const cols=Math.max(2,Math.floor(w/3));
-const rows=Math.max(2,Math.floor(h/3));
-
-for(let r=1;r<rows;r++){
-for(let c=0;c<cols;c++){
-const win=new THREE.Mesh(
-new THREE.BoxGeometry(.85,1.1,.08),
-mat(0x8bb5cb,.3)
-);
-win.position.set(-w/2+(c+.5)*w/cols,r*h/rows,d/2+.05);
-g.add(win);
+// Sidewalks beside major roads
+for(const x of majorX){
+ box(2,.18,700,0xc2bfb4,x-11,.14,0);
+ box(2,.18,700,0xc2bfb4,x+11,.14,0);
 }
+for(const z of majorZ){
+ box(700,.18,2,0xc2bfb4,0,.14,z-11);
+ box(700,.18,2,0xc2bfb4,0,.14,z+11);
 }
 
-// Roof
-const roof=new THREE.Mesh(
-new THREE.BoxGeometry(w+.4,.3,d+.4),
-mat(0x55565a)
-);
-roof.position.y=h+.15;
-g.add(roof);
+// Houses with detailed façades
+function house(x,z,style=0){
+ const g=new THREE.Group();
+ const colors=[0xd6b38b,0xd3c4a8,0xc9d1c0,0xe0c6a5,0xc5b7a5];
+ const color=colors[style%colors.length];
 
-g.position.set(x,0,z);
-scene.add(g);
-return g;
+ const w=13,d=11,h=6+Math.random()*2;
+
+ const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material(color));
+ body.position.y=h/2;
+ g.add(body);
+
+ // Roof
+ const roof=new THREE.Mesh(
+  new THREE.BoxGeometry(w+1,.4,d+1),
+  material(0x765342)
+ );
+ roof.position.y=h+.2;
+ g.add(roof);
+
+ // Front door
+ const door=new THREE.Mesh(
+  new THREE.BoxGeometry(1.6,2.8,.12),
+  material(0x573b2d)
+ );
+ door.position.set(0,1.4,d/2+.08);
+ g.add(door);
+
+ // Windows
+ for(let s of [-1,1]){
+  const win=new THREE.Mesh(
+   new THREE.BoxGeometry(1.6,1.6,.12),
+   mats.window
+  );
+  win.position.set(s*3,3,d/2+.08);
+  g.add(win);
+
+  const sill=new THREE.Mesh(
+   new THREE.BoxGeometry(2,.15,.3),
+   material(0xeee2cc)
+  );
+  sill.position.set(s*3,2.1,d/2+.15);
+  g.add(sill);
+ }
+
+ // Balcony on some houses
+ if(style%2===0){
+  const balcony=new THREE.Mesh(
+   new THREE.BoxGeometry(4,.25,1.5),
+   material(0xd5d0c5)
+  );
+  balcony.position.set(0,4.5,d/2+.5);
+  g.add(balcony);
+
+  const rail=new THREE.Mesh(
+   new THREE.BoxGeometry(4,.8,.1),
+   material(0xaaa69b)
+  );
+  rail.position.set(0,4.9,d/2+1);
+  g.add(rail);
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
-// Houses
-function house(x,z,color){
-const g=new THREE.Group();
-const w=12,d=10,h=6;
-
-const main=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
-main.position.y=h/2;
-g.add(main);
-
-const roof=new THREE.Mesh(
-new THREE.BoxGeometry(w+1,.5,d+1),
-mat(0x7a5140)
-);
-roof.position.y=h+.25;
-g.add(roof);
-
-// Door
-const door=new THREE.Mesh(
-new THREE.BoxGeometry(1.5,2.7,.12),
-mat(0x543526)
-);
-door.position.set(0,1.35,d/2+.08);
-g.add(door);
-
-// Windows
-for(let s of [-1,1]){
-const win=new THREE.Mesh(
-new THREE.BoxGeometry(1.5,1.5,.12),
-mat(0x9dc8dc,.3)
-);
-win.position.set(s*3,3,d/2+.08);
-g.add(win);
+// Buildings only placed in selected parcels, away from major roads
+function residentialBlock(cx,cz){
+ for(let dx=-22;dx<=22;dx+=22){
+  for(let dz=-22;dz<=22;dz+=22){
+   house(cx+dx,cz+dz,Math.floor(Math.random()*5));
+  }
+ }
 }
 
-g.position.set(x,0,z);
-scene.add(g);
+// Residential districts
+residentialBlock(-240,-240);
+residentialBlock(-240,-120);
+residentialBlock(-120,-240);
+residentialBlock(-240,240);
+residentialBlock(-120,240);
+residentialBlock(240,-240);
+residentialBlock(240,-120);
+residentialBlock(240,240);
+residentialBlock(120,240);
+
+// Trees
+function tree(x,z,size=1){
+ const g=new THREE.Group();
+
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(.35*size,.5*size,4*size,8),
+  material(0x69472d)
+ );
+ trunk.position.y=2*size;
+ g.add(trunk);
+
+ const leaves=new THREE.Mesh(
+  new THREE.SphereGeometry(3.2*size,12,12),
+  material(0x367a3c)
+ );
+ leaves.position.y=5*size;
+ g.add(leaves);
+
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
-// Residential blocks with deliberate gaps
-const colors=[0xd9b38b,0xd3c4a7,0xc9d5c5,0xe0c6a5,0xc5b8aa];
-
-// House blocks in specific regions
-for(let x=-300;x<=-100;x+=25){
-for(let z=-300;z<=-100;z+=25){
-house(x,z,colors[Math.floor(Math.random()*colors.length)]);
+// Trees on roadsides and open areas
+for(let x=-330;x<=330;x+=35){
+ tree(x,-340);
+ tree(x,340);
 }
-}
-
-for(let x=100;x<=300;x+=25){
-for(let z=100;z<=300;z+=25){
-house(x,z,colors[Math.floor(Math.random()*colors.length)]);
-}
+for(let z=-330;z<=330;z+=35){
+ tree(-340,z);
+ tree(340,z);
 }
 
-// Apartment complex inspired by Alembic Kiara
-function tower(x,z,w,d,floors){
-const g=new THREE.Group();
-const h=floors*3.1;
-
-const base=new THREE.Mesh(
-new THREE.BoxGeometry(w,h,d),
-mat(0xc5b69c)
-);
-base.position.y=h/2;
-base.castShadow=true;
-g.add(base);
-
-// Balcony / facade bands
-for(let floor=1;floor<floors;floor++){
-const band=new THREE.Mesh(
-new THREE.BoxGeometry(w+.3,.15,d+.3),
-mat(0x766958)
-);
-band.position.y=floor*3.1;
-g.add(band);
-}
-
-// Window grid
-for(let f=0;f<floors;f++){
-for(let c=0;c<Math.floor(w/2.8);c++){
-const win=new THREE.Mesh(
-new THREE.BoxGeometry(1.15,1.7,.08),
-mat(0x63889c,.35)
-);
-win.position.set(-w/2+2+c*2.8,f*3.1+1.7,d/2+.05);
-g.add(win);
-}
-}
-
-g.position.set(x,0,z);
-scene.add(g);
-}
-
-tower(280,60,22,18,18);
-tower(310,60,22,18,13);
-tower(340,60,22,18,10);
-
-// Residential landscaped compound
-for(let x=270;x<=350;x+=20){
-tree(x,100);
-}
-
-// Mangal Bazaar
-// Market district near the central east side
+// Market shops
 function shop(x,z,color){
-const g=new THREE.Group();
+ const g=new THREE.Group();
 
-const base=new THREE.Mesh(
-new THREE.BoxGeometry(12,6,10),
-mat(color)
-);
-base.position.y=3;
-g.add(base);
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(12,7,10),
+  material(color)
+ );
+ body.position.y=3.5;
+ g.add(body);
 
-const awning=new THREE.Mesh(
-new THREE.BoxGeometry(12,1,2),
-mat(0x8d3026)
-);
-awning.position.set(0,5,6);
-g.add(awning);
+ const storefront=new THREE.Mesh(
+  new THREE.BoxGeometry(8,3,.2),
+  mats.window
+ );
+ storefront.position.set(0,2,5.1);
+ g.add(storefront);
 
-const door=new THREE.Mesh(
-new THREE.BoxGeometry(2,3,.15),
-mat(0x4a3024)
-);
-door.position.set(0,1.5,5.1);
-g.add(door);
+ const awning=new THREE.Mesh(
+  new THREE.BoxGeometry(12,1,2),
+  material(0xa23b2c)
+ );
+ awning.position.set(0,5.5,6);
+ g.add(awning);
 
-g.position.set(x,0,z);
-scene.add(g);
+ const signboard=new THREE.Mesh(
+  new THREE.BoxGeometry(8,1.2,.2),
+  material(0x243d55)
+ );
+ signboard.position.set(0,6.2,5.1);
+ g.add(signboard);
+
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
-// Market street, with shops kept away from road
-for(let x=60;x<=150;x+=15){
-shop(x,55,0xd8a77b);
-shop(x,95,0xd0a47a);
+// Mangal Bazaar district
+for(let x=-25;x<=25;x+=15){
+ shop(x,20,0xd6aa7c);
+ shop(x,55,0xd4a57a);
+ shop(x,-20,0xe0b58a);
 }
 
-for(let z=55;z<=125;z+=15){
-shop(55,z,0xd4a477);
-shop(155,z,0xe0b183);
+// Mangal Bazaar-inspired gateway
+function gateway(x,z){
+ const g=new THREE.Group();
+ const ivory=material(0xe8dfcc);
+ const stone=material(0x92745b);
+
+ // Side piers
+ for(const s of [-1,1]){
+  const pier=new THREE.Mesh(new THREE.BoxGeometry(8,14,6),stone);
+  pier.position.set(s*14,7,0);
+  g.add(pier);
+
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(10,1,7),ivory);
+  cap.position.set(s*14,14,0);
+  g.add(cap);
+ }
+
+ // Central arch opening: two pillars and curved arch elements
+ const left=new THREE.Mesh(new THREE.BoxGeometry(5,10,6),ivory);
+ left.position.set(-5,5,0);
+ g.add(left);
+
+ const right=new THREE.Mesh(new THREE.BoxGeometry(5,10,6),ivory);
+ right.position.set(5,5,0);
+ g.add(right);
+
+ const archTop=new THREE.Mesh(new THREE.BoxGeometry(14,3,6),ivory);
+ archTop.position.y=11;
+ g.add(archTop);
+
+ // Decorative arch curve
+ for(let i=0;i<=8;i++){
+  const a=Math.PI*i/8;
+  const block=new THREE.Mesh(
+   new THREE.BoxGeometry(1.6,1.6,6.1),
+   ivory
+  );
+  block.position.set(Math.cos(a)*7,5+Math.sin(a)*5,0);
+  g.add(block);
+ }
+
+ const upper=new THREE.Mesh(new THREE.BoxGeometry(38,5,6),ivory);
+ upper.position.y=16;
+ g.add(upper);
+
+ const parapet=new THREE.Mesh(new THREE.BoxGeometry(40,2,6),ivory);
+ parapet.position.y=19;
+ g.add(parapet);
+
+ // Small ornamental towers
+ for(const s of [-1,0,1]){
+  const tower=new THREE.Mesh(
+   new THREE.ConeGeometry(3,6,8),
+   ivory
+  );
+  tower.position.set(s*13,22,0);
+  g.add(tower);
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
-// Gateway architecture
-function archGateway(x,z){
-const g=new THREE.Group();
-const stone=mat(0x9a8066);
-const ivory=mat(0xe8dfc9);
-
-// Left and right stone piers
-for(let s of [-1,1]){
-const pier=new THREE.Mesh(
-new THREE.BoxGeometry(8,13,5),
-stone
-);
-pier.position.set(s*13,6.5,0);
-g.add(pier);
-}
-
-// Central top section
-const upper=new THREE.Mesh(
-new THREE.BoxGeometry(34,5,5),
-ivory
-);
-upper.position.y=15;
-g.add(upper);
-
-// Decorative parapet
-const parapet=new THREE.Mesh(
-new THREE.BoxGeometry(38,2,5),
-ivory
-);
-parapet.position.y=18;
-g.add(parapet);
-
-// Top ornaments
-for(let s of [-1,0,1]){
-const dome=new THREE.Mesh(
-new THREE.ConeGeometry(3,5,8),
-ivory
-);
-dome.position.set(s*12,21,0);
-g.add(dome);
-}
-
-// Arch opening: left and right arch sides plus curved-looking crown segments
-const archSideL=new THREE.Mesh(new THREE.BoxGeometry(7,10,5),ivory);
-archSideL.position.set(-5,5,0);
-g.add(archSideL);
-
-const archSideR=new THREE.Mesh(new THREE.BoxGeometry(7,10,5),ivory);
-archSideR.position.set(5,5,0);
-g.add(archSideR);
-
-const crown=new THREE.Mesh(
-new THREE.BoxGeometry(12,3,5),
-ivory
-);
-crown.position.y=11;
-g.add(crown);
-
-// Decorative arch curve
-for(let i=0;i<9;i++){
-const a=Math.PI*i/8;
-const b=new THREE.Mesh(
-new THREE.BoxGeometry(1.3,1.3,5.2),
-ivory
-);
-b.position.set(Math.cos(a)*6,5+Math.sin(a)*5,0);
-g.add(b);
-}
-
-g.position.set(x,0,z);
-scene.add(g);
-}
-
-archGateway(110,25);
-
-// Sign
-function sign(x,y,z,text,color){
-const canvas=document.createElement('canvas');
-canvas.width=512;canvas.height=128;
-const ctx=canvas.getContext('2d');
-ctx.fillStyle=color;
-ctx.fillRect(0,0,512,128);
-ctx.fillStyle='#ffffff';
-ctx.font='bold 45px Arial';
-ctx.textAlign='center';
-ctx.textBaseline='middle';
-ctx.fillText(text,256,64);
-const tex=new THREE.CanvasTexture(canvas);
-const m=new THREE.Mesh(
-new THREE.PlaneGeometry(18,4),
-new THREE.MeshBasicMaterial({map:tex})
-);
-m.position.set(x,y,z);
-scene.add(m);
-}
-
-sign(110,24,10,"MANGAL BAZAAR","#9d3426");
+gateway(0,0);
 
 // Mehsana Nagar Ground
 const field=new THREE.Mesh(
-new THREE.BoxGeometry(140,.15,120),
-mat(0x6c9a47)
+ new THREE.BoxGeometry(130,.2,110),
+ material(0x689747)
 );
-field.position.set(-240,.05,100);
+field.position.set(-240,.1,120);
 scene.add(field);
 
-const boundary=new THREE.Mesh(
-new THREE.BoxGeometry(146,2,126),
-mat(0xb4b5ad)
-);
-boundary.position.set(-240,1,100);
-boundary.material.wireframe=true;
-scene.add(boundary);
+const fenceMat=material(0xc1c1b7);
+for(let s of [-1,1]){
+ box(130,1,1,fenceMat,-240,1,120+s*56);
+ box(1,1,110,fenceMat,-240+s*66,1,120);
+}
 
-sign(-240,6,165,"MEHSANA NAGAR GROUND","#26743c");
+for(let x=-300;x<=-180;x+=20){
+ tree(x,65);
+ tree(x,175);
+}
+
+label(-240,8,120,"MEHSANA NAGAR GROUND",0x2e713a);
 
 // Temple
 function temple(x,z){
-const g=new THREE.Group();
-const stone=mat(0xe0c8ac);
-const dark=mat(0x654d3c);
+ const g=new THREE.Group();
+ const cream=material(0xe1cbb0);
 
-const base=new THREE.Mesh(
-new THREE.BoxGeometry(45,10,35),
-stone
-);
-base.position.y=5;
-g.add(base);
+ const base=new THREE.Mesh(
+  new THREE.BoxGeometry(42,10,32),
+  cream
+ );
+ base.position.y=5;
+ g.add(base);
 
-// Pillars
-for(let x1=-18;x1<=18;x1+=9){
-for(let z1=-12;z1<=12;z1+=12){
-const p=new THREE.Mesh(
-new THREE.CylinderGeometry(.6,.8,7,12),
-stone
-);
-p.position.set(x1,10,z1);
-g.add(p);
-}
-}
+ const upper=new THREE.Mesh(
+  new THREE.BoxGeometry(32,7,24),
+  cream
+ );
+ upper.position.y=13.5;
+ g.add(upper);
 
-// Upper level
-const upper=new THREE.Mesh(
-new THREE.BoxGeometry(35,8,25),
-stone
-);
-upper.position.y=14;
-g.add(upper);
+ // Pillars
+ for(let px=-16;px<=16;px+=8){
+  const pillar=new THREE.Mesh(
+   new THREE.CylinderGeometry(.65,.85,8,12),
+   cream
+  );
+  pillar.position.set(px,10,14);
+  g.add(pillar);
+ }
 
-// Main tower
-const tower1=new THREE.Mesh(
-new THREE.ConeGeometry(9,23,12),
-stone
-);
-tower1.position.y=29;
-g.add(tower1);
+ // Main shikhara
+ const main=new THREE.Mesh(
+  new THREE.ConeGeometry(8,24,12),
+  cream
+ );
+ main.position.y=29;
+ g.add(main);
 
-// Smaller towers
-for(let s of [-1,1]){
-const t=new THREE.Mesh(
-new THREE.ConeGeometry(5,15,12),
-stone
-);
-t.position.set(s*13,25,0);
-g.add(t);
-}
+ // Smaller towers
+ for(let s of [-1,1]){
+  const tower=new THREE.Mesh(
+   new THREE.ConeGeometry(4.5,17,12),
+   cream
+  );
+  tower.position.set(s*12,26,0);
+  g.add(tower);
+ }
 
-// Decorative arches on front
-for(let x1=-12;x1<=12;x1+=12){
-const arch=new THREE.Mesh(
-new THREE.TorusGeometry(3, .45,8,16,Math.PI),
-stone
-);
-arch.rotation.z=Math.PI;
-arch.position.set(x1,15,13);
-g.add(arch);
-}
-
-g.position.set(x,0,z);
-scene.add(g);
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
 temple(-300,-250);
-sign(-300,35,-215,"TEMPLE","#aa7443");
+label(-300,38,-215,"TEMPLE",0x8c6541);
+
+// Apartment towers inspired by Alembic Kiara
+function apartment(x,z,w,d,floors){
+ const g=new THREE.Group();
+ const h=floors*3;
+
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),
+  material(0xc1b29a)
+ );
+ body.position.y=h/2;
+ g.add(body);
+
+ // Repeated floor bands
+ for(let f=1;f<floors;f++){
+  const band=new THREE.Mesh(
+   new THREE.BoxGeometry(w+.4,.18,d+.3),
+   material(0x7a6b59)
+  );
+  band.position.y=f*3;
+  g.add(band);
+ }
+
+ // Windows and balconies
+ for(let f=0;f<floors;f++){
+  for(let c=-1;c<=1;c++){
+   const win=new THREE.Mesh(
+    new THREE.BoxGeometry(1.5,1.8,.1),
+    mats.window
+   );
+   win.position.set(c*4,f*3+1.7,d/2+.1);
+   g.add(win);
+
+   const balcony=new THREE.Mesh(
+    new THREE.BoxGeometry(2.5,.15,1),
+    material(0xd2c8b8)
+   );
+   balcony.position.set(c*4,f*3+1,d/2+.5);
+   g.add(balcony);
+  }
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
+}
+
+apartment(250,120,25,20,18);
+apartment(285,120,25,20,14);
+apartment(320,120,25,20,11);
+
+label(285,58,160,"KIARA RESIDENCES",0x846e50);
 
 // Airport
-function airport(x,z){
-const g=new THREE.Group();
+function airport(){
+ const g=new THREE.Group();
 
-// terminal base
-const terminal=new THREE.Mesh(
-new THREE.BoxGeometry(120,12,42),
-mat(0xb8c1c9)
-);
-terminal.position.y=6;
-g.add(terminal);
+ // Main terminal
+ const base=new THREE.Mesh(
+  new THREE.BoxGeometry(130,14,44),
+  material(0xc1c6cb)
+ );
+ base.position.y=7;
+ g.add(base);
 
-// Curved roof approximated with repeated roof sections
-for(let i=0;i<18;i++){
-const section=new THREE.Mesh(
-new THREE.BoxGeometry(7,1.5,48),
-mat(0xc4c9ce)
-);
-section.position.set(-58+i*7,12+Math.sin(i/17*Math.PI)*8,0);
-g.add(section);
+ // Glass front
+ const glass=new THREE.Mesh(
+  new THREE.BoxGeometry(125,9,.5),
+  material(0x6faec9,.35)
+ );
+ glass.position.set(0,5,22.2);
+ g.add(glass);
+
+ // Continuous curved roof using cross-section extrusion
+ const roofShape=new THREE.Shape();
+ roofShape.moveTo(-65,0);
+ roofShape.quadraticCurveTo(-55,16,-30,22);
+ roofShape.quadraticCurveTo(0,27,30,22);
+ roofShape.quadraticCurveTo(55,16,65,0);
+ roofShape.lineTo(65,-2);
+ roofShape.lineTo(-65,-2);
+ roofShape.closePath();
+
+ const roof=new THREE.Mesh(
+  new THREE.ExtrudeGeometry(roofShape,{depth:48,bevelEnabled:false}),
+  material(0xbfc8cf)
+ );
+ roof.position.set(0,12,-24);
+ g.add(roof);
+
+ // Roof rails
+ for(let x=-50;x<=50;x+=25){
+  const rail=new THREE.Mesh(
+   new THREE.BoxGeometry(1,1,44),
+   material(0x778995)
+  );
+  rail.position.set(x,18,0);
+  g.add(rail);
+ }
+
+ // Airport apron
+ const apron=new THREE.Mesh(
+  new THREE.BoxGeometry(190,.1,110),
+  material(0x85898d)
+ );
+ apron.position.set(0,.1,-80);
+ g.add(apron);
+
+ // Runway
+ const runway=new THREE.Mesh(
+  new THREE.BoxGeometry(300,.12,50),
+  mats.road
+ );
+ runway.position.set(0,.15,-180);
+ g.add(runway);
+
+ // Runway stripes
+ for(let x=-120;x<=120;x+=30){
+  const stripe=new THREE.Mesh(
+   new THREE.BoxGeometry(8,.15,1),
+   mats.white
+  );
+  stripe.position.set(x,.25,-180);
+  g.add(stripe);
+ }
+
+ g.position.set(280,0,-300);
+ scene.add(g);
 }
 
-// glass frontage
-const glass=new THREE.Mesh(
-new THREE.BoxGeometry(115,8,.5),
-mat(0x6eafc9,.3)
-);
-glass.position.set(0,5,21.5);
-g.add(glass);
-
-// roof strips
-for(let i=-4;i<=4;i++){
-const strip=new THREE.Mesh(
-new THREE.BoxGeometry(2,1,35),
-mat(0x788a96)
-);
-strip.position.set(i*12,17,0);
-g.add(strip);
-}
-
-// runway
-const runway=new THREE.Mesh(
-new THREE.BoxGeometry(260,.1,45),
-asphalt
-);
-runway.position.set(0,.1,-100);
-g.add(runway);
-
-// runway lines
-for(let i=-100;i<=100;i+=20){
-const stripe=new THREE.Mesh(
-new THREE.BoxGeometry(8,.12,1),
-white
-);
-stripe.position.set(i,.2,-100);
-g.add(stripe);
-}
-
-g.position.set(300,0,-350);
-scene.add(g);
-}
-
-airport(0,0);
-sign(300,20,-310,"VADODARA AIRPORT","#2564a0");
-
-// Trees
-function tree(x,z){
-const g=new THREE.Group();
-const trunk=new THREE.Mesh(
-new THREE.CylinderGeometry(.35,.5,4,8),
-mat(0x68482d)
-);
-trunk.position.y=2;
-g.add(trunk);
-
-const leaves=new THREE.Mesh(
-new THREE.SphereGeometry(3.5,10,10),
-mat(0x408143)
-);
-leaves.position.y=5;
-g.add(leaves);
-
-g.position.set(x,0,z);
-scene.add(g);
-}
-
-// Tree rows around field and residential areas
-for(let x=-320;x<=-160;x+=12){
-tree(x,35);
-tree(x,165);
-}
-for(let z=-300;z<=300;z+=18){
-tree(-340,z);
-tree(340,z);
-}
+airport();
+label(280,25,-270,"VADODARA AIRPORT",0x3370a0);
 
 // Flyover
-const flyover=new THREE.Mesh(
-new THREE.BoxGeometry(200,3,14),
-mat(0x9b9b9b)
-);
-flyover.position.set(0,12,-100);
-scene.add(flyover);
-
+box(220,3,14,0x888888,0,12,-120);
 for(let x=-90;x<=90;x+=30){
-const pillar=new THREE.Mesh(
-new THREE.BoxGeometry(4,12,4),
-mat(0x777777)
-);
-pillar.position.set(x,6,-100);
-scene.add(pillar);
+ box(4,12,4,0x777777,x,6,-120);
 }
 
 // Roundabout
 const round=new THREE.Mesh(
-new THREE.CircleGeometry(24,48),
-asphalt
+ new THREE.CircleGeometry(24,48),
+ mats.road
 );
 round.rotation.x=-Math.PI/2;
-round.position.set(220,.08,0);
+round.position.set(180,.1,0);
 scene.add(round);
 
 const island=new THREE.Mesh(
-new THREE.CircleGeometry(12,48),
-mat(0x5e984b)
+ new THREE.CircleGeometry(12,48),
+ material(0x669747)
 );
 island.rotation.x=-Math.PI/2;
-island.position.set(220,.1,0);
+island.position.set(180,.2,0);
 scene.add(island);
 
-tree(220,0);
+tree(180,0,1.5);
 
 // Traffic lights
-const lights=[];
+const trafficLights=[];
+
 function trafficLight(x,z){
-const pole=new THREE.Mesh(
-new THREE.CylinderGeometry(.15,.15,7,8),
-mat(0x333333)
-);
-pole.position.set(x,3.5,z);
-scene.add(pole);
+ const g=new THREE.Group();
 
-const lamps=[];
-for(let i=0;i<3;i++){
-const lamp=new THREE.Mesh(
-new THREE.SphereGeometry(.3,12,12),
-new THREE.MeshStandardMaterial({color:0x333333,emissive:0x000000})
-);
-lamp.position.set(x,6.7-i*.8,z+.4);
-scene.add(lamp);
-lamps.push(lamp);
-}
-lights.push(lamps);
+ const pole=new THREE.Mesh(
+  new THREE.CylinderGeometry(.15,.15,7,8),
+  material(0x333333)
+ );
+ pole.position.y=3.5;
+ g.add(pole);
+
+ const housing=new THREE.Mesh(
+  new THREE.BoxGeometry(.8,2.4,.5),
+  material(0x202020)
+ );
+ housing.position.y=6.3;
+ g.add(housing);
+
+ const bulbs=[];
+ for(let i=0;i<3;i++){
+  const bulb=new THREE.Mesh(
+   new THREE.SphereGeometry(.25,12,12),
+   new THREE.MeshStandardMaterial({color:0x333333,emissive:0x000000})
+  );
+  bulb.position.y=7-i*.8;
+  g.add(bulb);
+  bulbs.push(bulb);
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
+ trafficLights.push(bulbs);
 }
 
-trafficLight(15,15);
-trafficLight(-15,15);
-trafficLight(15,-15);
-trafficLight(-15,-15);
+trafficLight(75,75);
+trafficLight(75,-75);
+trafficLight(-75,75);
+trafficLight(-75,-75);
 
 function updateLights(t){
-const phase=Math.floor(t/5)%3;
-lights.forEach(l=>{
-l.forEach((lamp,i)=>{
-lamp.material.color.setHex(i===phase?[0xff0000,0xffaa00,0x00ff00][i]:0x333333);
-lamp.material.emissive.setHex(i===phase?[0xff0000,0xffaa00,0x00ff00][i]:0);
-});
-});
+ const phase=Math.floor(t/4)%3;
+ trafficLights.forEach(bulbs=>{
+  bulbs.forEach((b,i)=>{
+   const active=i===phase;
+   b.material.color.setHex(active?[0xff3333,0xffaa00,0x22cc44][i]:0x333333);
+   b.material.emissive.setHex(active?[0xff3333,0xffaa00,0x22cc44][i]:0);
+  });
+ });
 }
 
 // Vehicles
 const cars=[];
-function makeCar(x,z,color){
-const g=new THREE.Group();
+function car(x,z,color){
+ const g=new THREE.Group();
 
-const body=new THREE.Mesh(
-new THREE.BoxGeometry(4.2,1.15,2),
-mat(color)
-);
-body.position.y=1;
-g.add(body);
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(4.5,1.2,2.2),
+  material(color)
+ );
+ body.position.y=1;
+ g.add(body);
 
-// hood
-const hood=new THREE.Mesh(
-new THREE.BoxGeometry(1.2,.45,2),
-mat(color)
-);
-hood.position.set(1.5,1.5,0);
-g.add(hood);
+ const hood=new THREE.Mesh(
+  new THREE.BoxGeometry(1.4,.4,2.1),
+  material(color)
+ );
+ hood.position.set(1.5,1.5,0);
+ g.add(hood);
 
-// cabin
-const cabin=new THREE.Mesh(
-new THREE.BoxGeometry(2.3,1.05,1.65),
-mat(0x8aa9ba,.35)
-);
-cabin.position.y=2;
-g.add(cabin);
+ const cabin=new THREE.Mesh(
+  new THREE.BoxGeometry(2.5,1.1,1.8),
+  material(0x779db2,.3)
+ );
+ cabin.position.set(-.1,2,0);
+ g.add(cabin);
 
-// wheels
-const wheels=[];
-for(let i=0;i<4;i++){
-const wheel=new THREE.Mesh(
-new THREE.CylinderGeometry(.5,.5,.35,16),
-mat(0x242424)
-);
-wheel.rotation.z=Math.PI/2;
-wheel.position.set(i<2?-1.3:1.3,.5,i%2===0?1:-1);
-g.add(wheel);
-wheels.push(wheel);
+ // Wheels
+ for(const px of [-1.5,1.5]){
+  for(const pz of [-1,1]){
+   const wheel=new THREE.Mesh(
+    new THREE.CylinderGeometry(.5,.5,.35,16),
+    material(0x222222)
+   );
+   wheel.rotation.z=Math.PI/2;
+   wheel.position.set(px,.5,pz);
+   g.add(wheel);
+  }
+ }
+
+ // Headlights
+ for(const pz of [-.7,.7]){
+  const light=new THREE.Mesh(
+   new THREE.BoxGeometry(.4,.3,.15),
+   material(0xe8e5b6)
+  );
+  light.position.set(2.2,1.2,pz);
+  g.add(light);
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
+ cars.push({g,speed:0});
 }
 
-g.position.set(x,0,z);
-scene.add(g);
-cars.push({group:g,velocity:0,wheels});
-}
-
-makeCar(10,40,0x263c5d);
-makeCar(-10,40,0xffffff);
-makeCar(40,10,0x343434);
-makeCar(-40,-10,0x888888);
-makeCar(50,50,0x174d37);
-makeCar(-50,50,0xc1c1c1);
+car(10,100,0x243c5b);
+car(-10,100,0xffffff);
+car(100,10,0x555555);
+car(-100,-10,0x777777);
+car(30,130,0x173e32);
 
 // NPCs
 const npcs=[];
 function npc(x,z){
-const g=new THREE.Group();
+ const g=new THREE.Group();
 
-const b=new THREE.Mesh(
-new THREE.BoxGeometry(.55,.85,.35),
-mat([0xc47d42,0x4488bb,0x558855,0xb04b45][Math.floor(Math.random()*4)])
+ const shirt=material([0xb87142,0x4488bb,0x568754,0xb04b45,0xd0ad48][Math.floor(Math.random()*5)]);
+
+ const torso=new THREE.Mesh(
+  new THREE.BoxGeometry(.55,.8,.35),
+  shirt
+ );
+ torso.position.y=1.25;
+ g.add(torso);
+
+ const head=new THREE.Mesh(
+  new THREE.SphereGeometry(.22,12,12),
+  mats.skin
+ );
+ head.position.y=1.9;
+ g.add(head);
+
+ const legs=[];
+ for(let i=0;i<2;i++){
+  const leg=new THREE.Mesh(
+   new THREE.BoxGeometry(.18,.7,.18),
+   material(0x29394b)
+  );
+  leg.position.set(i===0?-.12:.12,.45,0);
+  g.add(leg);
+  legs.push(leg);
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
+ npcs.push({g,x,z,phase:Math.random()*10,legs});
+}
+
+for(let i=0;i<15;i++){
+ npc(-25+Math.random()*50,25+Math.random()*40);
+}
+
+// Player
+const player=new THREE.Group();
+scene.add(player);
+
+const torso=new THREE.Mesh(
+ new THREE.BoxGeometry(.65,.85,.35),
+ material(0x2674d9)
 );
-b.position.y=1.2;
-g.add(b);
+torso.position.y=1.25;
+player.add(torso);
 
-const h=new THREE.Mesh(
-new THREE.SphereGeometry(.22,12,12),
-skin
+const head=new THREE.Mesh(
+ new THREE.SphereGeometry(.23,16,12),
+ mats.skin
 );
-h.position.y=1.85;
-g.add(h);
+head.position.y=1.95;
+player.add(head);
 
-const l1=new THREE.Mesh(new THREE.BoxGeometry(.17,.7,.18),pants);
-l1.position.set(-.12,.45,0);
-g.add(l1);
+const legs=[];
+const arms=[];
 
-const l2=l1.clone();
-l2.position.x=.12;
-g.add(l2);
+for(let i=0;i<2;i++){
+ const leg=new THREE.Mesh(
+  new THREE.BoxGeometry(.22,.7,.25),
+  material(0x25374b)
+ );
+ leg.position.set(i===0?-.15:.15,.45,0);
+ player.add(leg);
+ legs.push(leg);
 
-g.position.set(x,0,z);
-scene.add(g);
-npcs.push({g,x,z,phase:Math.random()*10});
-}
-
-// NPCs in market and ground vicinity, not road grid
-for(let i=0;i<25;i++){
-npc(60+Math.random()*100,50+Math.random()*100);
-}
-for(let i=0;i<12;i++){
-npc(-300+Math.random()*100,50+Math.random()*100);
-}
-
-// Clouds
-const clouds=[];
-for(let i=0;i<10;i++){
-const g=new THREE.Group();
-for(let j=0;j<4;j++){
-const c=new THREE.Mesh(
-new THREE.SphereGeometry(5,8,8),
-mat(0xffffff)
-);
-c.position.x=j*4;
-g.add(c);
-}
-g.position.set(Math.random()*800-400,100,Math.random()*800-400);
-scene.add(g);
-clouds.push(g);
+ const arm=new THREE.Mesh(
+  new THREE.BoxGeometry(.18,.65,.2),
+  mats.skin
+ );
+ arm.position.set(i===0?-.43:.43,1.25,0);
+ player.add(arm);
+ arms.push(arm);
 }
 
 // Controls
 const keys={};
 addEventListener('keydown',e=>{
-const k=e.key.toLowerCase();
-keys[k]=true;
-
-if(k==='e')toggleCar();
-if(k==='m')toggleMap();
-
-if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))
-e.preventDefault();
+ keys[e.key.toLowerCase()]=true;
+ if(e.key.toLowerCase()==='m')toggleMap();
+ if(e.key.toLowerCase()==='e')toggleCar();
 });
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
-let yaw=0;
-let camYaw=0;
-let camPitch=.35;
+let yaw=0,camYaw=0,camPitch=.4;
 let dragging=false,lastX=0,lastY=0;
 
 renderer.domElement.addEventListener('pointerdown',e=>{
-dragging=true;
-lastX=e.clientX;
-lastY=e.clientY;
+ dragging=true;lastX=e.clientX;lastY=e.clientY;
 });
 addEventListener('pointerup',()=>dragging=false);
 addEventListener('pointermove',e=>{
-if(!dragging)return;
-camYaw-=(e.clientX-lastX)*.005;
-camPitch=Math.max(-.1,Math.min(1.2,camPitch+(e.clientY-lastY)*.004));
-lastX=e.clientX;
-lastY=e.clientY;
+ if(!dragging)return;
+ camYaw-=(e.clientX-lastX)*.005;
+ camPitch=Math.max(-.1,Math.min(1.2,camPitch+(e.clientY-lastY)*.004));
+ lastX=e.clientX;lastY=e.clientY;
 });
 
 // Driving
 let activeCar=null;
+
 function toggleCar(){
-if(activeCar){
-player.position.copy(activeCar.group.position);
-activeCar.velocity=0;
-activeCar=null;
-document.getElementById('vehicleStatus').textContent='Walking';
-return;
-}
-let nearest=null,dist=7;
-for(const c of cars){
-const d=player.position.distanceTo(c.group.position);
-if(d<dist){nearest=c;dist=d;}
-}
-if(nearest){
-activeCar=nearest;
-document.getElementById('vehicleStatus').textContent='Driving';
-}
+ if(activeCar){
+  player.position.copy(activeCar.g.position);
+  activeCar.speed=0;
+  activeCar=null;
+  document.getElementById('vehicleStatus').textContent='Walking';
+  return;
+ }
+
+ let nearest=null,distance=8;
+ for(const c of cars){
+  const d=player.position.distanceTo(c.g.position);
+  if(d<distance){nearest=c;distance=d;}
+ }
+
+ if(nearest){
+  activeCar=nearest;
+  document.getElementById('vehicleStatus').textContent='Driving';
+ }
 }
 
 // Map
-const mapOverlay=document.getElementById('mapOverlay');
+const overlay=document.getElementById('mapOverlay');
+const canvas=document.getElementById('mapCanvas');
+
 function toggleMap(){
-mapOverlay.style.display=mapOverlay.style.display==='block'?'none':'block';
-drawMap();
+ overlay.style.display=overlay.style.display==='block'?'none':'block';
+ drawMap();
 }
-document.getElementById('mapbtn').onclick=toggleMap;
+
+document.getElementById('mapBtn').onclick=toggleMap;
 document.getElementById('closeMap').onclick=toggleMap;
 
 function drawMap(){
-const c=document.getElementById('cityMap');
-const ctx=c.getContext('2d');
-const W=c.width,H=c.height;
+ const ctx=canvas.getContext('2d');
+ ctx.clearRect(0,0,700,700);
+ ctx.fillStyle='#789a68';
+ ctx.fillRect(0,0,700,700);
 
-ctx.fillStyle='#789b63';
-ctx.fillRect(0,0,W,H);
+ // Major roads
+ ctx.fillStyle='#333333';
+ for(const n of [-300,-180,-60,60,180,300]){
+  const px=350+n;
+  const py=350+n;
+  ctx.fillRect(px-9,0,18,700);
+  ctx.fillRect(0,py-9,700,18);
+ }
 
-// Road grid
-ctx.fillStyle='#333';
-for(let i=100;i<650;i+=100){
-ctx.fillRect(i-8,0,16,H);
-ctx.fillRect(0,i-8,W,16);
+ // Minor streets
+ ctx.fillStyle='#505050';
+ for(const n of [-240,-120,120,240]){
+  ctx.fillRect(350+n-4,0,8,700);
+  ctx.fillRect(0,350+n-4,700,8);
+ }
+
+ // Ground
+ ctx.fillStyle='#67a147';
+ ctx.fillRect(50,470,130,110);
+ ctx.strokeStyle='#ddd';
+ ctx.strokeRect(50,470,130,110);
+ mapText(ctx,'MEHSANA GROUND',55,520);
+
+ // Market
+ ctx.fillStyle='#c99c70';
+ ctx.fillRect(290,290,100,80);
+ mapText(ctx,'MANGAL BAZAAR',295,330);
+
+ // Temple
+ ctx.fillStyle='#e0c6a8';
+ ctx.fillRect(40,50,100,90);
+ mapText(ctx,'TEMPLE',60,100);
+
+ // Towers
+ ctx.fillStyle='#b9ae98';
+ ctx.fillRect(510,450,130,100);
+ mapText(ctx,'KIARA',550,500);
+
+ // Airport
+ ctx.fillStyle='#898989';
+ ctx.fillRect(510,30,150,100);
+ ctx.fillStyle='#b9c8d5';
+ ctx.fillRect(525,50,120,30);
+ mapText(ctx,'AIRPORT',550,110);
+
+ // Player
+ const px=350+player.position.x;
+ const pz=350+player.position.z;
+ ctx.fillStyle='#ff3333';
+ ctx.beginPath();
+ ctx.arc(px,pz,7,0,Math.PI*2);
+ ctx.fill();
+
+ mapText(ctx,'YOU',px+10,pz);
 }
-ctx.fillRect(330-12,0,24,H);
-ctx.fillRect(0,330-12,W,24);
 
-// Airport
-ctx.fillStyle='#8c8c8c';
-ctx.fillRect(500,40,150,90);
-ctx.fillStyle='#b8c8d8';
-ctx.fillRect(520,60,110,30);
-ctx.fillStyle='white';
-ctx.font='16px Arial';
-ctx.fillText('AIRPORT',530,110);
-
-// Market
-ctx.fillStyle='#c89a6b';
-ctx.fillRect(350,220,120,120);
-ctx.fillStyle='white';
-ctx.fillText('MANGAL',370,270);
-ctx.fillText('BAZAAR',370,290);
-
-// Ground
-ctx.fillStyle='#65a147';
-ctx.fillRect(40,350,150,130);
-ctx.strokeStyle='#ddd';
-ctx.strokeRect(40,350,150,130);
-ctx.fillStyle='white';
-ctx.fillText('MEHSANA',65,415);
-ctx.fillText('GROUND',65,435);
-
-// Towers
-ctx.fillStyle='#b9ae98';
-ctx.fillRect(500,400,150,130);
-ctx.fillStyle='white';
-ctx.fillText('KIARA',550,470);
-
-// Temple
-ctx.fillStyle='#e3c8a8';
-ctx.fillRect(60,520,110,100);
-ctx.fillStyle='white';
-ctx.fillText('TEMPLE',85,570);
-
-// Player
-const px=350+(player.position.x/700)*300;
-const pz=350+(player.position.z/700)*300;
-ctx.fillStyle='#ff3333';
-ctx.beginPath();
-ctx.arc(px,pz,7,0,Math.PI*2);
-ctx.fill();
-
-// Legend
-ctx.fillStyle='white';
-ctx.font='18px Arial';
-ctx.fillText('● YOU',20,30);
+function mapText(ctx,text,x,y){
+ ctx.fillStyle='white';
+ ctx.font='bold 13px Arial';
+ ctx.fillText(text,x,y);
 }
 
 // Animation
 const clock=new THREE.Clock();
 
 function animate(){
-requestAnimationFrame(animate);
-const dt=Math.min(clock.getDelta(),.05);
-const t=clock.elapsedTime;
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),.05);
+ const t=clock.elapsedTime;
 
-updateLights(t);
-clouds.forEach(c=>c.position.x+=dt*1.5);
+ updateLights(t);
 
-if(activeCar){
-if(keys.w||keys.arrowup)activeCar.velocity=Math.min(activeCar.velocity+dt*12,35);
-if(keys.s||keys.arrowdown)activeCar.velocity=Math.max(activeCar.velocity-dt*18,-12);
-if(!keys.w&&!keys.s&&!keys.arrowup&&!keys.arrowdown)
-activeCar.velocity*=.985;
+ if(activeCar){
+  if(keys.w||keys.arrowup)activeCar.speed=Math.min(activeCar.speed+dt*12,35);
+  if(keys.s||keys.arrowdown)activeCar.speed=Math.max(activeCar.speed-dt*18,-12);
+  if(!keys.w&&!keys.s&&!keys.arrowup&&!keys.arrowdown)activeCar.speed*=.985;
 
-if(keys.a||keys.arrowleft)activeCar.group.rotation.y+=dt*1.5;
-if(keys.d||keys.arrowright)activeCar.group.rotation.y-=dt*1.5;
+  if(keys.a||keys.arrowleft)activeCar.g.rotation.y+=dt*1.5;
+  if(keys.d||keys.arrowright)activeCar.g.rotation.y-=dt*1.5;
 
-const dir=new THREE.Vector3(
-Math.sin(activeCar.group.rotation.y),0,
-Math.cos(activeCar.group.rotation.y)
-);
-activeCar.group.position.addScaledVector(dir,activeCar.velocity*dt);
-player.position.copy(activeCar.group.position);
-player.rotation.y=activeCar.group.rotation.y;
-}else{
-let move=0,turn=0;
-if(keys.w||keys.arrowup)move=1;
-if(keys.s||keys.arrowdown)move=-1;
-if(keys.a||keys.arrowleft)turn=1;
-if(keys.d||keys.arrowright)turn=-1;
+  const dir=new THREE.Vector3(
+   Math.sin(activeCar.g.rotation.y),0,
+   Math.cos(activeCar.g.rotation.y)
+  );
 
-if(move){
-yaw+=turn*dt*2;
-const speed=keys.shift?20:12;
-player.position.x+=Math.sin(yaw)*move*speed*dt;
-player.position.z+=Math.cos(yaw)*move*speed*dt;
-player.rotation.y=yaw;
+  activeCar.g.position.addScaledVector(dir,activeCar.speed*dt);
+  player.position.copy(activeCar.g.position);
+  player.rotation.y=activeCar.g.rotation.y;
+ }else{
+  let move=0,turn=0;
+
+  if(keys.w||keys.arrowup)move=1;
+  if(keys.s||keys.arrowdown)move=-1;
+  if(keys.a||keys.arrowleft)turn=1;
+  if(keys.d||keys.arrowright)turn=-1;
+
+  if(move){
+   yaw+=turn*dt*2;
+   const speed=keys.shift?20:12;
+   player.position.x+=Math.sin(yaw)*move*speed*dt;
+   player.position.z+=Math.cos(yaw)*move*speed*dt;
+   player.rotation.y=yaw;
+  }
+
+  legs.forEach((l,i)=>l.rotation.x=move*Math.sin(t*8+i*Math.PI)*.4);
+  arms.forEach((a,i)=>a.rotation.x=move*Math.sin(t*8+i*Math.PI)*.3);
+ }
+
+ npcs.forEach(n=>{
+  n.g.position.x=n.x+Math.sin(t+n.phase)*2;
+  n.g.position.z=n.z+Math.cos(t+n.phase)*2;
+  n.legs.forEach((l,i)=>l.rotation.x=Math.sin(t*3+n.phase+i*Math.PI)*.25);
+ });
+
+ const target=new THREE.Vector3(
+  player.position.x+Math.sin(camYaw)*18,
+  player.position.y+8+camPitch*10,
+  player.position.z+Math.cos(camYaw)*18
+ );
+
+ camera.position.lerp(target,.08);
+ camera.lookAt(player.position.x,player.position.y+1,player.position.z);
+
+ renderer.render(scene,camera);
 }
-legs.forEach((l,i)=>l.rotation.x=move*Math.sin(t*8+i*Math.PI)*.4);
-arms.forEach((a,i)=>a.rotation.x=move*Math.sin(t*8+i*Math.PI)*.3);
-}
 
-npcs.forEach(n=>{
-n.g.position.x=n.x+Math.sin(t+n.phase)*2;
-n.g.position.z=n.z+Math.cos(t+n.phase)*2;
-});
-
-const target=new THREE.Vector3(
-player.position.x+Math.sin(camYaw)*18,
-player.position.y+8+camPitch*10,
-player.position.z+Math.cos(camYaw)*18
-);
-camera.position.lerp(target,.08);
-camera.lookAt(player.position.x,player.position.y+1,player.position.z);
-
-renderer.render(scene,camera);
-}
 animate();
 
 addEventListener('resize',()=>{
-camera.aspect=innerWidth/innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(innerWidth,innerHeight);
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
 });
 </script>
 </body>
